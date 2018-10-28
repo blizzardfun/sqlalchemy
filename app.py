@@ -23,7 +23,21 @@ Base.prepare(engine, reflect=True)           # reflect the tables
 Measurement = Base.classes.measurement       # Save references to each table
 Station = Base.classes.station
 
-session = Session(engine)                    # Create session from Python to the DB
+#session = Session(engine)                    # Create session from Python to the DB
+#########################################################
+# function to calculate one year before the last data entry
+def year_ago():
+    # get last date in data
+    last_tuple=session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    last_date=last_tuple[0]
+    # find "1 year ago"
+    date_list=last_date.split('-')
+    year=int(date_list[0])
+    month=int(date_list[1])
+    day=int(date_list[2])
+    year_ago= date(year,month,day) - timedelta(days=365)
+    year_ago_date_str=str(year_ago)
+    return year_ago_date_str
 
 ##########################################################
 # Flask Setup
@@ -46,22 +60,13 @@ def welcome():
 @app.route("/api/v1.0/precipitation")
 def precipitation():
 #######################################################
-#return date and precipitation values from one year before last date in data set
+#return json list of date and precipitation values for last year in data set
 # in json form
 
-    # get last date
-    last_tuple=session.query(Measurement.date).order_by(Measurement.date.desc()).first()
-    last_date=last_tuple[0]
-    # find "1 year ago"
-    date_list=last_date.split('-')
-    year=int(date_list[0])
-    month=int(date_list[1])
-    day=int(date_list[2])
-    year_ago= date(year,month,day) - timedelta(days=365)
-    year_ago_date_str=str(year_ago)
-    year_ago_date_str
-    # query previous years data
-    data_set=session.query(Measurement.date, Measurement.prcp).filter(Measurement.date > year_ago_date_str).order_by(Measurement.date)
+    session = Session(engine)                    # Create session from Python to the DB
+
+    year_ago_date=year_ago()
+    data_set=session.query(Measurement.date, Measurement.prcp).filter(Measurement.date > year_ago_date).order_by(Measurement.date)
     # put into dictionary
     date_index=[record[0] for record in data_set]
     prcp_values=[record[1] for record in data_set]
@@ -73,6 +78,8 @@ def stations():
 #########################################################
 #  Return a JSON list of stations from the dataset.
 
+    session = Session(engine)                    # Create session from Python to the DB
+
     # List the stations and the counts in descending order.
     station_entrys=session.query(Station.name,Station.station).distinct().all()
     station_dict={}
@@ -80,6 +87,19 @@ def stations():
         station_dict[record[0]]=record[1]
     return jsonify(station_dict)
 
+@app.route("/api/v1.0/tobs")
+def tempobserv():
+###########################################################
+# Return a JSON list of Dates and Temperature Observations (tobs) for last year in data set
+
+    session = Session(engine)                    # Create session from Python to the DB
+
+    year_ago_date=year_ago()
+    temp_entrys=session.query(Measurement.date,Measurement.tobs).filter( Measurement.date > year_ago_date).all()
+    temp_dict={}
+    for record in temp_entrys:
+        temp_dict[record[0]]=record[1]
+    return jsonify(temp_dict)
 
 if __name__ == '__main__':
     app.run(debug=True)
