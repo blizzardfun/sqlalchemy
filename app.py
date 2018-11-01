@@ -2,7 +2,7 @@
 '''
 using flask to set up api endpoints for hawaiian weather data from sqlite
 user has the option to choose 
-    percipitation data, 
+    precipitation data, 
     observation station data, 
     temperature data in a date range. The date range options are 
             the last year of data
@@ -61,7 +61,7 @@ def welcome():
     """List all available api routes."""
     return (
         f"Available Routes:<br/>"   
-        f"For a json of the final years date and percipitation data                <br/>"
+        f"For a json of the final years date and precipitation data                <br/>"
         f"/api/v1.0/precipitation <br/><br/>"
         f"For a json list of the observation stations                              <br/>"
         f"/api/v1.0/stations<br/><br/>"
